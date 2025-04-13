@@ -1,0 +1,5 @@
+whisper
+pyaudio
+pygame
+pynput
+pyautogui
