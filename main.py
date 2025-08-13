@@ -21,7 +21,7 @@ SETTINGS_FILE = 'settings.json'
 _settings_lock = threading.Lock()
 settings = {
     "shortcut_mode": "toggle",           # toggle | hold
-    "shortcut_key_toggle": "ctrl+alt+shift+r",  # combination for toggle mode
+    "shortcut_key_toggle": "ctrl+shift+space",  # combination for toggle mode
     "shortcut_key_hold": "ctrl",         # single key for hold mode
     "auto_paste": True,
     "silence_threshold": 50,
