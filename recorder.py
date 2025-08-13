@@ -346,6 +346,19 @@ def process_speech(session_id=None):
     # Transcribe the recorded audio
     transcribed_text = transcribe_with_gemini(audio_file)
 
+    # Detect likely API key / auth errors and inform user via popup (non-fatal)
+    try:
+        if isinstance(transcribed_text, str) and transcribed_text.lower().startswith("transcription error"):
+            lowered = transcribed_text.lower()
+            if any(k in lowered for k in ["api key", "unauthorized", "invalid", "permission", "403", "401", "forbidden"]):
+                try:
+                    from alert_popup import show_invalid_api_key_popup
+                    show_invalid_api_key_popup(transcribed_text)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
     # Discard if session became stale after transcription latency
     if session_id != active_session_id:
         print("Stale recording (post-transcribe) discarded")

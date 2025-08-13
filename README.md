@@ -54,10 +54,6 @@ python main.py
 
 Tip: Alternatively, you can create a `.env` file with `GEMINI_API_KEY=your_key`.
 
-### 5. Start Recording
-- Press `Ctrl+Shift+Space` (or your custom hotkey)
-- Speak naturally - the app detects silence automatically
-- Your text appears instantly with AI-powered accuracy
 
 ## 🎮 How It Works
 

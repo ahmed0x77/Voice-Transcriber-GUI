@@ -8,6 +8,7 @@ import pyautogui
 import pyperclip
 from dotenv import load_dotenv
 import recorder
+from alert_popup import show_missing_api_key_popup
 import keyboard
 from overlay_manager import init_overlay, show_overlay, set_paused_overlay, destroy_overlay
 from tray import init_tray, shutdown_tray
@@ -120,6 +121,14 @@ def _register_hotkeys():
 
 @eel.expose
 def start_recording():
+    # Validate API key BEFORE starting capture so user gets immediate feedback.
+    api_key = (settings.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY') or '').strip()
+    if not api_key:
+        try:
+            show_missing_api_key_popup()
+        except Exception:
+            pass
+        return {"status": "error", "error": "missing_api_key"}
     if recorder.recording:
         return {"status": "already_recording"}
     recorder.stop_event.clear()
