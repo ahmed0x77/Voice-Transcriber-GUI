@@ -18,6 +18,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const brainProviderSelect = document.getElementById("brainProvider");
   const brainPromptTextarea = document.getElementById("brainPrompt");
   const editPromptBtn = document.getElementById("editPromptBtn");
+  const savePromptBtn = document.getElementById("savePromptBtn");
+  const cancelPromptBtn = document.getElementById("cancelPromptBtn");
+  const audioDeviceSelect = document.getElementById("audioDeviceSelect");
   const silenceThresholdInput = document.getElementById("silenceThresholdInput");
   const calibrateBtn = document.getElementById("calibrateBtn");
 
@@ -47,6 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
     apiKeyInput.value = settings.gemini_api_key || "";
     // Mic
     silenceThresholdInput.value = settings.silence_threshold ?? 50;
+    // Audio device will be populated by loadAudioDevices()
   };
 
   /**
@@ -62,6 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
       shortcut_key_toggle: toggleComboInput.value.trim(),
       shortcut_key_hold: holdKeyInput.value.trim(),
       silence_threshold: Number(silenceThresholdInput.value) || 50,
+      audio_device_index: audioDeviceSelect.value === "" ? null : Number(audioDeviceSelect.value),
       // We still need to send the other settings
       speech_provider: currentSettings.speech_provider, // Preserved from load
       transcri_brain: {
@@ -124,26 +129,94 @@ document.addEventListener("DOMContentLoaded", () => {
     saveSettings(); // Save immediately on mode change
   });
 
-  // Auto-saving on change for all relevant controls
+  // Auto-saving on change for all relevant controls (except prompt which has manual save)
   [
     toggleComboInput,
     holdKeyInput,
     brainProviderSelect,
-    brainPromptTextarea,
     apiKeyInput,
     silenceThresholdInput,
+    audioDeviceSelect,
   ].forEach((el) => {
     el.addEventListener("change", saveSettings);
   });
 
-  // Prompt Edit Button
+  // Prompt Edit/Save/Cancel functionality
+  let originalPromptValue = "";
+  
   editPromptBtn.addEventListener("click", () => {
+    // Store original value for cancel
+    originalPromptValue = brainPromptTextarea.value;
+    
+    // Enable editing
+    brainPromptTextarea.readOnly = false;
     brainPromptTextarea.focus();
-    brainPromptTextarea.select();
+    
+    // Show save/cancel buttons, hide edit button
+    editPromptBtn.classList.add("hidden");
+    savePromptBtn.classList.remove("hidden");
+    cancelPromptBtn.classList.remove("hidden");
+  });
+  
+  savePromptBtn.addEventListener("click", async () => {
+    // Disable editing
+    brainPromptTextarea.readOnly = true;
+    
+    // Hide save/cancel buttons, show edit button
+    editPromptBtn.classList.remove("hidden");
+    savePromptBtn.classList.add("hidden");
+    cancelPromptBtn.classList.add("hidden");
+    
+    // Save the settings
+    await saveSettings();
+  });
+  
+  cancelPromptBtn.addEventListener("click", () => {
+    // Restore original value
+    brainPromptTextarea.value = originalPromptValue;
+    
+    // Disable editing
+    brainPromptTextarea.readOnly = true;
+    
+    // Hide save/cancel buttons, show edit button
+    editPromptBtn.classList.remove("hidden");
+    savePromptBtn.classList.add("hidden");
+    cancelPromptBtn.classList.add("hidden");
   });
 
   // --- Initial Load ---
   loadSettings();
+
+  // Load audio devices
+  const loadAudioDevices = async () => {
+    try {
+      const res = await eel.get_audio_devices()();
+      if (res && res.ok && res.devices) {
+        // Clear existing options except "Default microphone"
+        while (audioDeviceSelect.children.length > 1) {
+          audioDeviceSelect.removeChild(audioDeviceSelect.lastChild);
+        }
+        // Add device options
+        res.devices.forEach(device => {
+          const option = document.createElement('option');
+          option.value = device.index;
+          option.textContent = device.name;
+          audioDeviceSelect.appendChild(option);
+        });
+        // Set selected device from settings
+        const deviceIndex = currentSettings.audio_device_index;
+        if (deviceIndex !== null && deviceIndex !== undefined) {
+          audioDeviceSelect.value = deviceIndex;
+        } else {
+          audioDeviceSelect.value = ""; // Default microphone
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load audio devices:", err);
+    }
+  };
+
+  loadAudioDevices();
 
   // Calibrate handler
   calibrateBtn.addEventListener("click", async () => {

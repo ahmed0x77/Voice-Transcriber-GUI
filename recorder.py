@@ -20,6 +20,7 @@ CHANNELS = 1
 RATE = 16000
 CHUNK = 512  # Smaller chunk for lower latency capture (was 1024)
 TEMP_DIRECTORY = tempfile.gettempdir()
+SELECTED_DEVICE_INDEX = None  # None means use default device
 
 # Silence detection settings
 SILENCE_THRESHOLD = 50  # Amplitude threshold for silence detection (can be updated at runtime)
@@ -86,6 +87,52 @@ def set_silence_threshold(value):
     except Exception as _e:
         pass
 
+def get_audio_devices():
+    """Get list of available audio input devices.
+
+    Returns:
+        list of dicts with keys: index, name, max_inputs
+    """
+    devices = []
+    try:
+        p = pyaudio.PyAudio()
+        for i in range(p.get_device_count()):
+            try:
+                info = p.get_device_info_by_index(i)
+                if info.get('maxInputChannels', 0) > 0:  # Has input capability
+                    devices.append({
+                        'index': i,
+                        'name': info.get('name', f'Device {i}'),
+                        'max_inputs': info.get('maxInputChannels', 0)
+                    })
+            except Exception:
+                continue
+        p.terminate()
+    except Exception:
+        pass
+    return devices
+
+def set_audio_device(device_index):
+    """Set the audio input device to use for recording.
+
+    Args:
+        device_index: int device index, or None for default
+    """
+    global SELECTED_DEVICE_INDEX
+    if device_index is None:
+        SELECTED_DEVICE_INDEX = None
+    else:
+        try:
+            device_index = int(device_index)
+            # Validate device exists
+            devices = get_audio_devices()
+            if any(d['index'] == device_index for d in devices):
+                SELECTED_DEVICE_INDEX = device_index
+            else:
+                print(f"Invalid device index: {device_index}")
+        except Exception:
+            print(f"Invalid device index: {device_index}")
+
 def is_silence(data):
     """Determine if an audio chunk is silence based on amplitude threshold"""
     # Convert bytes to numpy array
@@ -114,6 +161,7 @@ def calibrate_noise_floor(duration_sec: float = 2.0) -> dict:
         channels=CHANNELS,
         rate=RATE,
         input=True,
+        input_device_index=SELECTED_DEVICE_INDEX,
         frames_per_buffer=CHUNK
     )
     try:
@@ -172,6 +220,7 @@ def record_audio(session_id):
         channels=CHANNELS,
         rate=RATE,
         input=True,
+        input_device_index=SELECTED_DEVICE_INDEX,
         frames_per_buffer=CHUNK
     )
     

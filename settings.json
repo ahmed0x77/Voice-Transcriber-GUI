@@ -4,6 +4,7 @@
   "shortcut_key_hold": "ctrl",
   "auto_paste": true,
   "silence_threshold": 54,
+  "audio_device_index": null,
   "gemini_api_key": "",
   "speech_provider": "Gemini",
   "transcri_brain": {

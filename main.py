@@ -25,6 +25,7 @@ settings = {
     "shortcut_key_hold": "ctrl",         # single key for hold mode
     "auto_paste": True,
     "silence_threshold": 50,
+    "audio_device_index": None,          # None for default device
     "gemini_api_key": "",
     "speech_provider": "Gemini",         # future: Groq, etc.
     "transcri_brain": {
@@ -251,6 +252,11 @@ def update_settings(new_values: dict):
             recorder.set_silence_threshold(new_values.get('silence_threshold'))
         except Exception:
             pass
+    if 'audio_device_index' in new_values:
+        try:
+            recorder.set_audio_device(new_values.get('audio_device_index'))
+        except Exception:
+            pass
     if any(k.startswith('shortcut_') or k == 'shortcut_mode' for k in changed_keys):
         _register_hotkeys()
     return {"updated": changed_keys}
@@ -284,12 +290,26 @@ def calibrate_silence_threshold(duration_sec: float = 2.0):
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+@eel.expose
+def get_audio_devices():
+    """Get list of available audio input devices."""
+    try:
+        devices = recorder.get_audio_devices()
+        return {"ok": True, "devices": devices}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 def main():
     # Always load persisted settings first
     load_settings()
     # Apply silence threshold to recorder
     try:
         recorder.set_silence_threshold(settings.get('silence_threshold', 50))
+    except Exception:
+        pass
+    # Apply audio device to recorder
+    try:
+        recorder.set_audio_device(settings.get('audio_device_index'))
     except Exception:
         pass
     if not os.environ.get("GEMINI_API_KEY"):
