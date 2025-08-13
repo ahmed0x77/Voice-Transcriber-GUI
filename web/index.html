@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Smart Audio Transcript</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="icon" type="image/png" href="../icon.png" />
+    <style>
+      :root {
+        --bg-main: #000000;
+        --bg-sidebar: #131313;
+        --bg-card: #1c1c1c;
+        --bg-input: #0e0e0e;
+        --bg-nav-active: #2a2a2a;
+        --border-color: #2e2e2e;
+        --text-primary: #ffffff;
+        --text-secondary: #a0a0a0;
+        --text-placeholder: #555555;
+        --switch-bg: #4d4d4d;
+        --switch-bg-active: #ffffff;
+        --font-main: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg-main);
+        color: var(--text-primary);
+        font-family: var(--font-main);
+        display: flex;
+        height: 100vh;
+        overflow: hidden;
+        font-size: 14px;
+      }
+      aside {
+        width: 200px;
+        background: var(--bg-sidebar);
+        flex-shrink: 0;
+        padding: 24px 16px;
+      }
+      .nav-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .nav-list button {
+        width: 100%;
+        text-align: left;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 15px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: 0.15s ease-in-out;
+      }
+      .nav-list button:hover {
+        background: var(--bg-nav-active);
+        color: var(--text-primary);
+      }
+      .nav-list button.active {
+        background: var(--bg-nav-active);
+        color: var(--text-primary);
+      }
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+      }
+      .pane {
+        padding: 32px 40px;
+      }
+      .pane h1.page-title {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 0 0 40px 0;
+      }
+      h2.section-title {
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-primary);
+        margin: 0 0 12px 0;
+      }
+      .settings-card {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 12px 20px;
+        margin-bottom: 32px;
+      }
+      .setting-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-height: 52px;
+      }
+      .setting-row.column {
+        flex-direction: column;
+        align-items: flex-start;
+        padding-top: 12px;
+      }
+      .setting-row label {
+        font-weight: 500;
+        color: var(--text-primary);
+      }
+      .divider {
+        border: none;
+        height: 1px;
+        background-color: var(--border-color);
+        margin: 0 -20px;
+      }
+      .hint {
+        font-size: 13px;
+        color: var(--text-secondary);
+        padding: 12px 0;
+        line-height: 1.5;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      /* Custom Controls */
+      .value-display,
+      select {
+        color: var(--text-secondary);
+        font-weight: 500;
+        padding-right: 20px;
+        position: relative;
+        background-color: transparent;
+        border: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        appearance: none;
+        text-align: right;
+        cursor: pointer;
+      }
+      .value-display::after,
+      select::after {
+        content: "›";
+        font-size: 20px;
+        font-weight: bold;
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%) rotate(0deg);
+        color: var(--text-secondary);
+        pointer-events: none;
+      }
+      select:focus {
+        outline: none;
+      }
+      select option {
+        background: var(--bg-card);
+        color: var(--text-primary);
+      }
+
+      /* Shortcut Controls */
+      .shortcut-controls {
+        width: 100%;
+        padding-top: 8px;
+      }
+      .mode-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .mode-tabs button {
+        background: #333;
+        border: 1px solid #444;
+        color: var(--text-secondary);
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+      }
+      .mode-tabs button.active,
+      .mode-tabs button:hover {
+        color: var(--text-primary);
+        background: #444;
+      }
+      .shortcut-input-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: 100%;
+        padding-bottom: 8px;
+      }
+      .shortcut-input-row label {
+        flex-basis: 90px;
+        flex-shrink: 0;
+        font-size: 14px;
+        color: var(--text-secondary);
+      }
+      input.shortcut-input {
+        flex: 1;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        color: var(--text-primary);
+        padding: 8px 12px;
+        font-family: inherit;
+        font-size: 14px;
+      }
+      input.shortcut-input:focus {
+        outline: none;
+        border-color: #555;
+      }
+
+      /* Prompt Area */
+      .prompt-display {
+        font-family: var(--font-main);
+        color: var(--text-secondary);
+        background: transparent;
+        border: none;
+        width: 100%;
+        padding: 8px 0;
+        font-size: 14px;
+        line-height: 1.6;
+        resize: none;
+        min-height: 80px;
+        white-space: pre-wrap;
+      }
+      .prompt-display:focus {
+        outline: none;
+        color: var(--text-primary);
+      }
+      .edit-action {
+        width: 100%;
+        text-align: right;
+        padding: 4px 0;
+      }
+      .edit-button {
+        background: #333;
+        color: var(--text-primary);
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 6px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .edit-button:hover {
+        background: #3a3a3a;
+      }
+      .icon-pencil {
+        display: inline-block;
+        width: 1em;
+        height: 1em;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23ffffff'%3E%3Cpath d='M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z'/%3E%3Cpath fill-rule='evenodd' d='M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z' clip-rule='evenodd'/%3E%3C/svg%3E");
+        background-size: contain;
+        background-repeat: no-repeat;
+      }
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <ul class="nav-list">
+        <li>
+          <button class="active" data-view="general">General</button>
+        </li>
+        <li><button data-view="api-keys">API Keys</button></li>
+      </ul>
+    </aside>
+    <main>
+      <section id="view-general" class="pane">
+        <h1 class="page-title">General</h1>
+
+        <h2 class="section-title">Shortcut</h2>
+        <div class="settings-card">
+          <div class="shortcut-controls">
+            <div id="shortcutModeTabs" class="mode-tabs">
+              <button data-mode="toggle" class="active">Toggle</button>
+              <button data-mode="hold">Hold</button>
+            </div>
+            <div id="toggleKeyRow" class="shortcut-input-row">
+              <label for="toggleComboInput">Combo</label>
+              <input
+                id="toggleComboInput"
+                type="text"
+                class="shortcut-input"
+                placeholder="e.g., ctrl+alt+shift+r"
+              />
+            </div>
+            <div id="holdKeyRow" class="shortcut-input-row hidden">
+              <label for="holdKeyInput">Key</label>
+              <input
+                id="holdKeyInput"
+                type="text"
+                class="shortcut-input"
+                placeholder="e.g., ctrl"
+              />
+            </div>
+          </div>
+          <div class="hint">
+            Toggle: press once to start/stop. Hold: hold to record, release to
+            stop.
+          </div>
+        </div>
+
+        <h2 class="section-title">Transcri Brain</h2>
+        <div class="settings-card">
+          <div class="setting-row">
+            <label>Provider</label>
+            <select id="brainProvider">
+              <option value="Gemini">Gemini</option>
+              <!-- Add other brain providers here if any -->
+            </select>
+          </div>
+          <hr class="divider" />
+          <div class="setting-row column">
+            <label>Prompt</label>
+            <textarea
+              id="brainPrompt"
+              class="prompt-display"
+              spellcheck="false"
+            ></textarea>
+            <div class="edit-action">
+              <button id="editPromptBtn" class="edit-button">
+                <span class="icon-pencil"></span>Edit
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-api-keys" class="pane hidden">
+        <h1 class="page-title">API Keys</h1>
+        <div class="settings-card">
+          <div class="hint" style="padding: 20px 0">
+            Environment variable
+            <code
+              style="
+                background: #333;
+                padding: 2px 6px;
+                border-radius: 4px;
+                font-family: monospace;
+              "
+              >GEMINI_API_KEY</code
+            >
+            is read on startup. For changes to take effect, please add it to a
+            .env file in the app's directory or set it as a system environment
+            variable and restart the application.
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="eel.js"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

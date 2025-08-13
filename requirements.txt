@@ -3,3 +3,10 @@ pyaudio
 pygame
 pynput
 pyautogui
+eel
+python-dotenv
+numpy
+google-genai
+pyperclip
+pystray
+pillow

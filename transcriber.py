@@ -3,6 +3,27 @@ import json
 from google import genai
 from google.genai import types
 
+SETTINGS_FILE = 'settings.json'
+
+def _load_prompt():
+    """Load custom prompt from settings.json (transcri_brain.prompt) if enabled.
+    Falls back to a minimal default instruction if not present.
+    The user requested a plain Part.from_text(text="...") without extra markdown wrappers.
+    """
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            brain = data.get('transcri_brain', {})
+            if brain.get('enabled', True):
+                prompt = brain.get('prompt', '').strip()
+                if prompt:
+                    return prompt
+    except Exception as e:
+        print('Prompt load error:', e)
+    # Default minimal instruction (kept concise per request)
+    return "Transcribe the audio accurately. Preserve original language/scripts. Remove filler words. Do not translate."
+
 def transcribe_with_gemini(audio_file):
     """Transcribes audio using the Gemini API"""
     if audio_file is None:
@@ -21,36 +42,17 @@ def transcribe_with_gemini(audio_file):
         
         # Define the model and content
         model = "gemini-2.0-flash"
+        custom_prompt = _load_prompt()
         contents = [
             types.Content(
-            role="user",
-            parts=[
-                types.Part.from_uri(
-                file_uri=uploaded_file.uri,
-                mime_type=uploaded_file.mime_type,
-                ),
-                types.Part.from_text(text="""**Objective:** You are a transcript model. Your task is to transcribe the provided audio file into clean, readable text. You must preserve the original language and native script of all spoken words, and intelligently infer correct terms based on context where pronunciation is ambiguous.
-
-**Instructions for Your Transcription:**
-
-1.  **Transcribe Audio:** Convert the audio content (provided directly with this prompt) to text.
-2.  **Remove Disfluencies:** You are to eliminate filler words and self-corrections (e.g., "um," "uh," "like," "you know," "I mean," "sort of").
-3.  **Intelligent Error Correction & Clarification:**
-    *   You should fix obvious minor slips of the tongue or grammatical errors *only if the speaker's intended meaning is unequivocally clear*. Do not alter the original meaning.
-    *   **Contextual Inference for Ambiguous/Technical Terms:** If a specific term (especially a technical term, product name, or proper noun) is slightly mispronounced, slurred, or acoustically unclear, you must leverage the surrounding context to infer and transcribe the most probable correct term.
-        *   **Example:** If the audio sounds like "please fix this socketye-oh connection in that Python script," and "socket IO" is a highly plausible and common term in the context of a "Python script," you should transcribe it as "socket IO."
-        *   This applies when the audio might be ambiguous but the context provides strong clues to the intended word.
-    *   **Constraint:** This inference should only be applied when the contextual evidence is strong and the inferred term significantly improves clarity and accuracy without altering the speaker's core message. You must avoid speculative guessing if context is weak.
-
-4.  **Preserve Original Language & Script (No Translation, No Transliteration to Latin Script):**
-    *   You must transcribe all words *exactly* as spoken in their original language, using their native script.
-    *   If the audio contains mixed languages (e.g., English and Arabic), you are to transcribe words in their respective languages *and scripts* without translation.
-    *   **Crucial Example:** If a speaker says "hello man انت فاكرني", your transcription *must* be "hello man انت فاكرني". It should *NOT* be "hello man enta fakerny" or "hello man you remember me". The Arabic words must remain in Arabic script.
-5.  **Formatting:** You should include line breaks as needed for readability (e.g., for new speakers or logical breaks in thought).
-
-**Input:** Audio file (provided directly with this message/prompt).
-**Output:** Cleaned, contextually-aware text transcript with original languages and scripts preserved."""),
-            ],
+                role="user",
+                parts=[
+                    types.Part.from_uri(
+                        file_uri=uploaded_file.uri,
+                        mime_type=uploaded_file.mime_type,
+                    ),
+                    types.Part.from_text(text=custom_prompt),
+                ],
             ),
         ]
         

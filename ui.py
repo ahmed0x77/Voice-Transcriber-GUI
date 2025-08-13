@@ -402,11 +402,9 @@ class RecorderApp(ctk.CTk):
 
     def on_transcription_done(self, text: str):
         if self.auto_paste_var.get():
-            try:
-                import pyautogui
-                pyautogui.hotkey('ctrl', 'v')
-            except Exception:
-                pass
+            import pyautogui
+            pyautogui.hotkey('ctrl', 'v')
+
         self.transcript_box.configure(state="normal")
         self.transcript_box.delete("1.0", "end")
         self.transcript_box.insert("end", text)
