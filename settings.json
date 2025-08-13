@@ -3,6 +3,8 @@
   "shortcut_key_toggle": "ctrl+alt+shift+r",
   "shortcut_key_hold": "ctrl",
   "auto_paste": true,
+  "silence_threshold": 54,
+  "gemini_api_key": "",
   "speech_provider": "Gemini",
   "transcri_brain": {
     "enabled": true,

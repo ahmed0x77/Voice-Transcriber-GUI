@@ -18,6 +18,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const brainProviderSelect = document.getElementById("brainProvider");
   const brainPromptTextarea = document.getElementById("brainPrompt");
   const editPromptBtn = document.getElementById("editPromptBtn");
+  const silenceThresholdInput = document.getElementById("silenceThresholdInput");
+  const calibrateBtn = document.getElementById("calibrateBtn");
 
   // --- Functions ---
 
@@ -43,6 +45,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     // Gemini API Key
     apiKeyInput.value = settings.gemini_api_key || "";
+    // Mic
+    silenceThresholdInput.value = settings.silence_threshold ?? 50;
   };
 
   /**
@@ -57,6 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
       shortcut_mode: mode,
       shortcut_key_toggle: toggleComboInput.value.trim(),
       shortcut_key_hold: holdKeyInput.value.trim(),
+      silence_threshold: Number(silenceThresholdInput.value) || 50,
       // We still need to send the other settings
       speech_provider: currentSettings.speech_provider, // Preserved from load
       transcri_brain: {
@@ -126,6 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     brainProviderSelect,
     brainPromptTextarea,
     apiKeyInput,
+    silenceThresholdInput,
   ].forEach((el) => {
     el.addEventListener("change", saveSettings);
   });
@@ -138,6 +144,29 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Initial Load ---
   loadSettings();
+
+  // Calibrate handler
+  calibrateBtn.addEventListener("click", async () => {
+    calibrateBtn.disabled = true;
+    const oldText = calibrateBtn.textContent;
+    calibrateBtn.textContent = "Calibrating...";
+    try {
+      const res = await eel.calibrate_silence_threshold(2.5)();
+      if (res && res.ok) {
+        const thr = Math.round(res.threshold);
+        silenceThresholdInput.value = thr;
+        currentSettings.silence_threshold = thr;
+        await eel.set_silence_threshold(thr)();
+      } else {
+        console.error("Calibration failed", res && res.error);
+      }
+    } catch (err) {
+      console.error("Calibration error", err);
+    } finally {
+      calibrateBtn.textContent = oldText;
+      calibrateBtn.disabled = false;
+    }
+  });
 });
 
 // ---------------- Eel <-> Python callback handlers -----------------

@@ -310,6 +310,30 @@
           </div>
         </div>
 
+        <h2 class="section-title">Mic Settings</h2>
+        <div class="settings-card">
+          <div class="shortcut-input-row">
+            <label for="silenceThresholdInput">Silence threshold</label>
+            <input
+              id="silenceThresholdInput"
+              type="number"
+              class="shortcut-input"
+              placeholder="e.g., 50"
+              min="1"
+              step="1"
+            />
+          </div>
+          <div class="setting-row">
+            <label>Calibrate ambient noise</label>
+            <button id="calibrateBtn" class="edit-button">Calibrate</button>
+          </div>
+          <div class="hint">
+            Make sure the room is quiet and do not speak during calibration. The
+            measured value will be written into the input above and used for
+            silence detection.
+          </div>
+        </div>
+
         <h2 class="section-title">Transcribe Brain</h2>
         <div class="settings-card">
           <div class="setting-row">

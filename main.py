@@ -24,6 +24,7 @@ settings = {
     "shortcut_key_toggle": "ctrl+alt+shift+r",  # combination for toggle mode
     "shortcut_key_hold": "ctrl",         # single key for hold mode
     "auto_paste": True,
+    "silence_threshold": 50,
     "gemini_api_key": "",
     "speech_provider": "Gemini",         # future: Groq, etc.
     "transcri_brain": {
@@ -244,11 +245,53 @@ def update_settings(new_values: dict):
                     settings[k] = v
                 changed_keys.append(k)
     save_settings()
+    # Apply runtime effects
+    if 'silence_threshold' in new_values:
+        try:
+            recorder.set_silence_threshold(new_values.get('silence_threshold'))
+        except Exception:
+            pass
     if any(k.startswith('shortcut_') or k == 'shortcut_mode' for k in changed_keys):
         _register_hotkeys()
     return {"updated": changed_keys}
 
+@eel.expose
+def set_silence_threshold(value):
+    """Directly set silence threshold and persist to settings."""
+    try:
+        recorder.set_silence_threshold(value)
+        with _settings_lock:
+            settings['silence_threshold'] = int(float(value))
+        save_settings()
+        return {"ok": True, "silence_threshold": settings['silence_threshold']}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+@eel.expose
+def calibrate_silence_threshold(duration_sec: float = 2.0):
+    """Listen to ambient noise and compute a suggested silence threshold.
+
+    Returns result dict with ambient stats and chosen threshold; applies and persists it.
+    """
+    try:
+        result = recorder.calibrate_noise_floor(duration_sec)
+        threshold = int(float(result.get('threshold', 50)))
+        recorder.set_silence_threshold(threshold)
+        with _settings_lock:
+            settings['silence_threshold'] = threshold
+        save_settings()
+        return {"ok": True, **result}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
 def main():
+    # Always load persisted settings first
+    load_settings()
+    # Apply silence threshold to recorder
+    try:
+        recorder.set_silence_threshold(settings.get('silence_threshold', 50))
+    except Exception:
+        pass
     if not os.environ.get("GEMINI_API_KEY"):
         print("WARNING: GEMINI_API_KEY not set in environment variables or .env file")
         # Load user settings (including optional API key)

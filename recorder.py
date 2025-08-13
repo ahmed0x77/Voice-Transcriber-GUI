@@ -22,7 +22,7 @@ CHUNK = 512  # Smaller chunk for lower latency capture (was 1024)
 TEMP_DIRECTORY = tempfile.gettempdir()
 
 # Silence detection settings
-SILENCE_THRESHOLD = 50  # Amplitude threshold for silence detection
+SILENCE_THRESHOLD = 50  # Amplitude threshold for silence detection (can be updated at runtime)
 MIN_VOICE_PERCENTAGE = 0.05  # Minimum percentage of non-silent chunks to consider as valid speech
 
 # Global variables
@@ -70,6 +70,22 @@ def play_audio(file_path, wait=False):
     else:
         winsound.PlaySound(file_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
 
+def set_silence_threshold(value):
+    """Update the global silence threshold used by is_silence().
+
+    Args:
+        value: numeric threshold (will be coerced to int, min 1)
+    """
+    global SILENCE_THRESHOLD
+    try:
+        v = int(float(value))
+        if v < 1:
+            v = 1
+        SILENCE_THRESHOLD = v
+        print(f"Silence threshold set to {SILENCE_THRESHOLD}")
+    except Exception as _e:
+        pass
+
 def is_silence(data):
     """Determine if an audio chunk is silence based on amplitude threshold"""
     # Convert bytes to numpy array
@@ -78,6 +94,64 @@ def is_silence(data):
     amplitude = np.abs(audio_array).mean()
     print("amplitude:", amplitude)  # Debugging line to check amplitude
     return amplitude < SILENCE_THRESHOLD
+
+def calibrate_noise_floor(duration_sec: float = 2.0) -> dict:
+    """Sample ambient audio to estimate noise floor and propose a silence threshold.
+
+    Args:
+        duration_sec: seconds to listen for ambient noise (user should stay silent)
+
+    Returns:
+        dict with keys: ambient_mean, ambient_p95, threshold
+    """
+    if duration_sec is None or duration_sec <= 0:
+        duration_sec = 2.0
+
+    # Initialize PyAudio
+    p = pyaudio.PyAudio()
+    stream = p.open(
+        format=AUDIO_FORMAT,
+        channels=CHANNELS,
+        rate=RATE,
+        input=True,
+        frames_per_buffer=CHUNK
+    )
+    try:
+        num_chunks = int(max(1, RATE / CHUNK * duration_sec))
+        amplitudes = []
+        for _ in range(num_chunks):
+            data = stream.read(CHUNK, exception_on_overflow=False)
+            audio_array = np.frombuffer(data, dtype=np.int16)
+            amp = float(np.abs(audio_array).mean())
+            amplitudes.append(amp)
+
+        if amplitudes:
+            ambient_mean = float(np.mean(amplitudes))
+            ambient_p95 = float(np.percentile(amplitudes, 95))
+        else:
+            ambient_mean = 0.0
+            ambient_p95 = 0.0
+
+        # Heuristic: pick a safe threshold above noise floor but not too high
+        # Use the larger of (p95 * 1.4) and (mean * 2.0), with a lower bound
+        proposed = max(ambient_p95 * 1.4, ambient_mean * 2.0, 30.0)
+        proposed = float(round(proposed))
+
+        return {
+            "ambient_mean": ambient_mean,
+            "ambient_p95": ambient_p95,
+            "threshold": proposed,
+        }
+    finally:
+        try:
+            stream.stop_stream()
+        except Exception:
+            pass
+        try:
+            stream.close()
+        except Exception:
+            pass
+        p.terminate()
 
 def record_audio(session_id):
     """Records audio from microphone until stop_event is set, filtering out silence.
