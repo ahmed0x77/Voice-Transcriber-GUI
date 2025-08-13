@@ -24,6 +24,7 @@ settings = {
     "shortcut_key_toggle": "ctrl+alt+shift+r",  # combination for toggle mode
     "shortcut_key_hold": "ctrl",         # single key for hold mode
     "auto_paste": True,
+    "gemini_api_key": "",
     "speech_provider": "Gemini",         # future: Groq, etc.
     "transcri_brain": {
         "enabled": True,
@@ -250,7 +251,14 @@ def update_settings(new_values: dict):
 def main():
     if not os.environ.get("GEMINI_API_KEY"):
         print("WARNING: GEMINI_API_KEY not set in environment variables or .env file")
-    load_settings()
+        # Load user settings (including optional API key)
+        load_settings()
+        # Apply stored API key if provided, else fall back to environment
+        api_key = settings.get("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
+        if api_key:
+            os.environ["GEMINI_API_KEY"] = api_key
+        else:
+            print("WARNING: GEMINI_API_KEY not set; please enter it in API Keys view")
     eel.init(WEB_DIR)
     init_overlay(
         pause_toggle_cb=lambda: toggle_pause(),

@@ -310,7 +310,7 @@
           </div>
         </div>
 
-        <h2 class="section-title">Transcri Brain</h2>
+        <h2 class="section-title">Transcribe Brain</h2>
         <div class="settings-card">
           <div class="setting-row">
             <label>Provider</label>
@@ -339,20 +339,17 @@
       <section id="view-api-keys" class="pane hidden">
         <h1 class="page-title">API Keys</h1>
         <div class="settings-card">
+          <div class="setting-row column">
+            <label for="apiKeyInput">Gemini API Key</label>
+            <input
+              id="apiKeyInput"
+              type="text"
+              class="shortcut-input"
+              placeholder="Enter Gemini API Key"
+            />
+          </div>
           <div class="hint" style="padding: 20px 0">
-            Environment variable
-            <code
-              style="
-                background: #333;
-                padding: 2px 6px;
-                border-radius: 4px;
-                font-family: monospace;
-              "
-              >GEMINI_API_KEY</code
-            >
-            is read on startup. For changes to take effect, please add it to a
-            .env file in the app's directory or set it as a system environment
-            variable and restart the application.
+            Saving here overrides the GEMINI_API_KEY environment variable.
           </div>
         </div>
       </section>

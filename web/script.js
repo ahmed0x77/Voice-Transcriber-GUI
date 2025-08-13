@@ -1,4 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // API Key input field
+  const apiKeyInput = document.getElementById("apiKeyInput");
   // --- Element Selectors ---
   const views = {
     general: document.getElementById("view-general"),
@@ -39,6 +41,8 @@ document.addEventListener("DOMContentLoaded", () => {
       brainProviderSelect.value = settings.transcri_brain.provider || "Gemini";
       brainPromptTextarea.value = settings.transcri_brain.prompt || "";
     }
+    // Gemini API Key
+    apiKeyInput.value = settings.gemini_api_key || "";
   };
 
   /**
@@ -60,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         provider: brainProviderSelect.value,
         prompt: brainPromptTextarea.value,
       },
+      gemini_api_key: apiKeyInput.value.trim(),
     };
 
     try {
@@ -120,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     holdKeyInput,
     brainProviderSelect,
     brainPromptTextarea,
+    apiKeyInput,
   ].forEach((el) => {
     el.addEventListener("change", saveSettings);
   });
