@@ -10,27 +10,24 @@ A modern, feature-rich speech-to-text application that combines the power of Goo
 
 ### 🎯 **Smart Recording**
 - **One-click recording** with customizable hotkeys
-- **Silence detection** that automatically stops when you're done speaking
 - **Pause & resume** without losing your audio
 - **Multiple microphones** support with easy device switching
 
 ### 🤖 **AI-Powered Transcription**
 - **Google Gemini AI** for accurate, context-aware transcription
-- **Multi-language support** - preserves original scripts (English, Arabic, etc.)
-- **Smart error correction** that understands context and technical terms
+- **Multi-language support** - 120+ Supported Languages
 - **Customizable AI prompts** for specialized use cases
 
 ### 🖥️ **Modern Interface**
-- **Beautiful web UI** with dark theme and responsive design
+- **Beautiful UI** with dark theme and responsive design
 - **Floating recording overlay** that stays on top while you work
 - **System tray integration** for background operation
 - **Real-time status** and audio feedback
 
 ### ⚡ **Productivity Features**
 - **Auto-paste** transcribed text directly to your active application
-- **Global hotkeys** - record from anywhere without switching windows
+- **auto-save in cliboard** it automatically saves the transcribed text to clipboard
 - **Background operation** - keeps running in system tray
-- **Instant restart** - discard and start fresh recording
 
 ## 🚀 Quick Start
 
@@ -57,11 +54,10 @@ Tip: Alternatively, you can create a `.env` file with `GEMINI_API_KEY=your_key`.
 
 ## 🎮 How It Works
 
-1. **Start Recording** - Click the button or use your hotkey
+1. **Start Recording** - press `Ctrl+Shift+Space` to start/stop recording
 2. **Speak Naturally** - The floating overlay shows recording status
-3. **Auto-Stop** - Recording stops when you finish speaking
-4. **AI Processing** - Gemini AI transcribes with context awareness
-5. **Auto-Paste** - Text appears in your active application
+3. **AI Processing** - Gemini AI transcribes with context awareness
+4. **Auto-Paste** - Text appears in your active application and is saved to clipboard
 
 ## 🛠️ Configuration
 
@@ -77,7 +73,7 @@ Tip: Alternatively, you can create a `.env` file with `GEMINI_API_KEY=your_key`.
 ### AI Customization
 - **Custom Prompts**: Tailor transcription for your specific needs
 - **Language Preservation**: Maintains original scripts and accents
-- **Error Correction**: Context-aware fixes for technical terms
+
 
 
 ## 🏗️ Architecture
@@ -91,29 +87,6 @@ Smart Audio Transcript uses a modern hybrid architecture:
 
 This gives you the best of both worlds: a modern web UI for settings and responsive native controls for recording.
 
-## 🎯 Use Cases
-
-### 👨‍💻 **Developers**
-- Code documentation and comments
-- Meeting notes and brainstorming
-- Technical documentation
-
-### 📝 **Content Creators**
-- Video subtitles and captions
-- Podcast transcription
-- Blog post drafting
-
-### 🎓 **Students**
-- Lecture notes and study materials
-- Research documentation
-- Assignment writing
-
-### 💼 **Professionals**
-- Meeting minutes and action items
-- Email drafting
-- Report writing
-
-## 🔧 Advanced Features
 
 
 ## 🤝 Contributing
@@ -125,26 +98,6 @@ We welcome contributions! Here's how you can help:
 3. **Commit** your changes (`git commit -m 'Add amazing feature'`)
 4. **Push** to the branch (`git push origin feature/amazing-feature`)
 5. **Open** a Pull Request
-
-### Development Setup
-```bash
-git clone https://github.com/yourusername/smart-audio-transcript.git
-cd smart-audio-transcript
-pip install -r requirements.txt
-python main.py
-```
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **Google Gemini AI** for powerful transcription capabilities
-- **Eel** for the modern web interface framework
-- **CustomTkinter** for beautiful native overlays
-- **pystray** for seamless system tray integration
-
 
 ---
 
