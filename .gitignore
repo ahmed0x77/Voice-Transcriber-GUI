@@ -6,3 +6,7 @@
 __pycache__
 *.pyc
 settings.json
+.env
+voice to text.bat
+voice to text v4.exe
+
