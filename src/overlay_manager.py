@@ -51,7 +51,7 @@ class RecordingOverlay(ctk.CTkToplevel):
         self._timer_job_id = None
 
         # Container
-        self.container = ctk.CTkFrame(self, fg_color='#1b1b1b', corner_radius=28)
+        self.container = ctk.CTkFrame(self, fg_color='#1b1b1b', corner_radius=28, border_width=2, border_color='#2E2E2E')
         self.container.pack(fill='both', expand=True)
         self.container.pack_propagate(False)
 
