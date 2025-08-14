@@ -31,7 +31,7 @@ def _load_icon(path: str):
         return None
 
 
-def init_tray(icon_path: str = 'icon.png', **callbacks):
+def init_tray(icon_path: str = 'images/icon.png', **callbacks):
     """Initialize and start the system tray icon in a background thread.
 
     callbacks: show (show UI), quit (terminate), start_record, stop_record

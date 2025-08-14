@@ -324,7 +324,7 @@ def process_speech(session_id=None):
     global active_session_id
     if session_id is None:
         session_id = active_session_id
-    from transcriber import transcribe_with_gemini
+    from .transcriber import transcribe_with_gemini
     
     # Record audio until stop_event is set
     audio_file, aborted = record_audio(session_id)
@@ -352,7 +352,7 @@ def process_speech(session_id=None):
             lowered = transcribed_text.lower()
             if any(k in lowered for k in ["api key", "unauthorized", "invalid", "permission", "403", "401", "forbidden"]):
                 try:
-                    from alert_popup import show_invalid_api_key_popup
+                    from .alert_popup import show_invalid_api_key_popup
                     show_invalid_api_key_popup(transcribed_text)
                 except Exception:
                     pass

@@ -205,8 +205,8 @@ class RecorderApp(ctk.CTk):
 
         self.title("Voice to Text (Gemini)")
         try:
-            if os.path.exists("icon.ico"):
-                self.iconbitmap("icon.ico")
+            if os.path.exists("images/icon.ico"):
+                self.iconbitmap("images/icon.ico")
         except Exception:
             pass
 

@@ -7,12 +7,11 @@ import eel
 import pyautogui
 import pyperclip
 from dotenv import load_dotenv
-import recorder
-from alert_popup import show_missing_api_key_popup
+from src import recorder
+from src.alert_popup import show_missing_api_key_popup
 import keyboard
-from overlay_manager import init_overlay, show_overlay, set_paused_overlay, destroy_overlay
-from tray import init_tray, shutdown_tray
-
+from src.overlay_manager import init_overlay, show_overlay, set_paused_overlay, destroy_overlay
+from src.tray import init_tray, shutdown_tray
 load_dotenv()
 
 WEB_DIR = 'web'
@@ -374,7 +373,7 @@ def main():
         stop_recording()
 
     init_tray(
-        icon_path='icon.png',
+        icon_path='images/icon.png',
         show=show_ui,
         quit=quit_app,
         start_record=tray_start_record,
