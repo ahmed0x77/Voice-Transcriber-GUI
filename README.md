@@ -4,7 +4,7 @@
 
 A modern, feature-rich speech-to-text application that combines the power of Google's Gemini AI with a beautiful web interface and floating recording controls. Perfect for content creators, developers, students, and anyone who needs fast, accurate transcription.
 
-![Screenshot of Smart Audio Transcript](SCREENSHOT_PLACEHOLDER.png)
+![Screenshot of Smart Audio Transcript](images\SCREENSHOT_PLACEHOLDER.png)
 
 ## ✨ Features
 
