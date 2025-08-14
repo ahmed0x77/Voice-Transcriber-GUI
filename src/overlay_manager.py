@@ -69,8 +69,9 @@ class RecordingOverlay(ctk.CTkToplevel):
 
         self.timer_label = ctk.CTkLabel(self.status_pill, text='0:00', text_color='white', font=('Segoe UI', 18, 'bold'))
         self.timer_label.pack(side='left', padx=(0, 14))
-        for w in (self.status_pill, self.rec_indicator, self.timer_label):
+        for w in (self.status_pill, self.rec_indicator, self.timer_label, self.rec_inner_stop):
             w.bind('<Button-1>', lambda _e: self.on_stop())
+            w.configure(cursor='hand2')
 
         # Divider
         self.divider = ctk.CTkFrame(self.container, width=2, height=36, fg_color='#2a2a2a')
