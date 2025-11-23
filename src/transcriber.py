@@ -1,7 +1,7 @@
 import os
 import json
-from google import genai
-from google.genai import types
+import base64
+from openai import OpenAI
 
 SETTINGS_FILE = 'settings.json'
 
@@ -24,67 +24,77 @@ def _load_prompt():
     # Default minimal instruction (kept concise per request)
     return "Transcribe the audio accurately. Preserve original language/scripts. Remove filler words. Do not translate."
 
+def _load_api_key():
+    """Load API key from settings.json"""
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data.get('openrouter_api_key', '')
+    except Exception as e:
+        print('API key load error:', e)
+    return ''
+
+def _load_model():
+    """Load model from settings.json"""
+    try:
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data.get('model', 'google/gemini-2.5-flash-lite')
+    except Exception as e:
+        print('Model load error:', e)
+    return 'google/gemini-2.5-flash-lite'
+
 def transcribe_with_gemini(audio_file):
-    """Transcribes audio using the Gemini API"""
+    """Transcribes audio using OpenRouter (OpenAI client) with Gemini model"""
     if audio_file is None:
         return None
     
     try:
-        # Initialize the Gemini API client
-        client = genai.Client(
-            api_key=os.environ.get("GEMINI_API_KEY"),
+        # Initialize the OpenAI client with OpenRouter configuration
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=_load_api_key(),
         )
         
-        print("Sending to Gemini API...")
+        print("Sending to OpenRouter...")
         
-        # Upload the audio file
-        uploaded_file = client.files.upload(file=audio_file)
-        
-        # Define the model and content
-        model = "gemini-2.0-flash"
+        # Read and encode the audio file
+        with open(audio_file, "rb") as f:
+            audio_data = base64.b64encode(f.read()).decode("utf-8")
+            
         custom_prompt = _load_prompt()
-        contents = [
-            types.Content(
-                role="user",
-                parts=[
-                    types.Part.from_uri(
-                        file_uri=uploaded_file.uri,
-                        mime_type=uploaded_file.mime_type,
-                    ),
-                    types.Part.from_text(text=custom_prompt),
-                ],
-            ),
-        ]
+        model_name = _load_model()
         
-        # Configure the response schema
-        generate_content_config = types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=types.Schema(
-                type=types.Type.OBJECT,
-                properties={
-                    "text": types.Schema(
-                        type=types.Type.STRING,
-                    ),
-                },
-            ),
+        # Create the chat completion request
+        # Using the model specified in settings
+        response = client.chat.completions.create(
+            model=model_name,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": custom_prompt
+                        },
+                        {
+                            "type": "input_audio",
+                            "input_audio": {
+                                "data": audio_data,
+                                "format": "wav"
+                            }
+                        }
+                    ]
+                }
+            ]
         )
         
-        # Generate content
-        response = client.models.generate_content(
-            model=model,
-            contents=contents,
-            config=generate_content_config,
-        )
-        
-        # Parse the response
-        print(response.text)  # Debugging line to check the response")
-        try:
-            response_json = json.loads(response.text)
-            transcribed_text = response_json.get("text", "")
-            return transcribed_text
-        except json.JSONDecodeError:
-            print("Error decoding JSON response")
-            return response.text  # Return raw text if JSON parsing fails
+        # Extract the text from the response
+        transcribed_text = response.choices[0].message.content
+        print(transcribed_text)
+        return transcribed_text
             
     except Exception as e:
         print(f"Error during transcription: {e}")

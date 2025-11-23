@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const toggleComboInput = document.getElementById("toggleComboInput");
   const holdKeyInput = document.getElementById("holdKeyInput");
 
-  const brainProviderSelect = document.getElementById("brainProvider");
+  const modelSelect = document.getElementById("modelSelect");
   const brainPromptTextarea = document.getElementById("brainPrompt");
   const editPromptBtn = document.getElementById("editPromptBtn");
   const savePromptBtn = document.getElementById("savePromptBtn");
@@ -43,11 +43,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Transcri Brain
     if (settings.transcri_brain) {
-      brainProviderSelect.value = settings.transcri_brain.provider || "Gemini";
       brainPromptTextarea.value = settings.transcri_brain.prompt || "";
     }
-    // Gemini API Key
-    apiKeyInput.value = settings.gemini_api_key || "";
+    // Model
+    modelSelect.value = settings.model || "google/gemini-2.5-flash-lite";
+    
+    // OpenRouter API Key
+    apiKeyInput.value = settings.openrouter_api_key || "";
     // Mic
     silenceThresholdInput.value = settings.silence_threshold ?? 50;
     // Audio device will be populated by loadAudioDevices()
@@ -68,13 +70,12 @@ document.addEventListener("DOMContentLoaded", () => {
       silence_threshold: Number(silenceThresholdInput.value) || 50,
       audio_device_index: audioDeviceSelect.value === "" ? null : Number(audioDeviceSelect.value),
       // We still need to send the other settings
-      speech_provider: currentSettings.speech_provider, // Preserved from load
+      model: modelSelect.value,
       transcri_brain: {
         enabled: true, // Always enabled as per previous request
-        provider: brainProviderSelect.value,
         prompt: brainPromptTextarea.value,
       },
-      gemini_api_key: apiKeyInput.value.trim(),
+      openrouter_api_key: apiKeyInput.value.trim(),
     };
 
     try {
@@ -133,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   [
     toggleComboInput,
     holdKeyInput,
-    brainProviderSelect,
+    modelSelect,
     apiKeyInput,
     silenceThresholdInput,
     audioDeviceSelect,

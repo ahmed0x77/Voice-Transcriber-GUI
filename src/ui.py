@@ -1,4 +1,5 @@
 import os
+import json
 import threading
 import keyboard
 import customtkinter as ctk
@@ -227,6 +228,19 @@ class RecorderApp(ctk.CTk):
         self.status_label = ctk.CTkLabel(self, textvariable=self.status_var)
         self.status_label.pack()
 
+        # Model Selection
+        settings_frame = ctk.CTkFrame(self, fg_color="transparent")
+        settings_frame.pack(fill="x", padx=16, pady=(0, 4))
+        
+        # Load model from settings
+        self.models = ["google/gemini-2.5-flash-lite", "openai/gpt-4o-audio-preview"]
+        current_model = self._load_model_setting()
+        self.model_var = ctk.StringVar(value=current_model)
+        
+        ctk.CTkLabel(settings_frame, text="Model:").pack(side="left", padx=(12, 8))
+        self.model_menu = ctk.CTkOptionMenu(settings_frame, values=self.models, variable=self.model_var, command=self._on_model_change, width=250)
+        self.model_menu.pack(side="left")
+
         # Controls
         controls = ctk.CTkFrame(self)
         controls.pack(fill="x", padx=16, pady=12)
@@ -258,6 +272,30 @@ class RecorderApp(ctk.CTk):
         self.protocol("WM_DELETE_WINDOW", self.on_close)
 
     # --- Helpers ---
+    def _load_model_setting(self):
+        try:
+            if os.path.exists('settings.json'):
+                with open('settings.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                return data.get('model', 'google/gemini-2.5-flash-lite')
+        except Exception:
+            pass
+        return 'google/gemini-2.5-flash-lite'
+
+    def _on_model_change(self, choice):
+        try:
+            data = {}
+            if os.path.exists('settings.json'):
+                with open('settings.json', 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+            
+            data['model'] = choice
+            
+            with open('settings.json', 'w', encoding='utf-8') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"Error saving model setting: {e}")
+
     def _set_recording_ui(self, is_recording: bool):
         self.record_button.configure(state="disabled" if is_recording else "normal",
                                      text="Recording..." if is_recording else "Start Recording")

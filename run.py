@@ -26,11 +26,10 @@ settings = {
     "auto_paste": True,
     "silence_threshold": 50,
     "audio_device_index": None,          # None for default device
-    "gemini_api_key": "",
-    "speech_provider": "Gemini",         # future: Groq, etc.
+    "openrouter_api_key": "",
+    "model": "google/gemini-2.5-flash-lite",
     "transcri_brain": {
         "enabled": True,
-        "provider": "Gemini",
         "prompt": """**Objective:** You are a transcript model. Your task is to transcribe the provided audio file into clean, readable text. You must preserve the original language and native script of all spoken words, and intelligently infer correct terms based on context where pronunciation is ambiguous.
 
 **Instructions for Your Transcription:**
@@ -121,7 +120,7 @@ def _register_hotkeys():
 @eel.expose
 def start_recording():
     # Validate API key BEFORE starting capture so user gets immediate feedback.
-    api_key = (settings.get('gemini_api_key') or os.environ.get('GEMINI_API_KEY') or '').strip()
+    api_key = (settings.get('openrouter_api_key') or os.environ.get('OPENROUTER_API_KEY') or '').strip()
     if not api_key:
         try:
             show_missing_api_key_popup()

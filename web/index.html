@@ -389,11 +389,15 @@
         <h2 class="section-title">Transcribe Brain</h2>
         <div class="settings-card">
           <div class="setting-row">
-            <label>Provider</label>
+            <label>Model</label>
             <div class="select-wrapper">
-              <select id="brainProvider">
-                <option value="Gemini">Gemini</option>
-                <!-- Add other brain providers here if any -->
+              <select id="modelSelect">
+                <option value="google/gemini-2.5-flash-lite">
+                  Gemini 2.5 Flash Lite
+                </option>
+                <option value="openai/gpt-4o-audio-preview">
+                  GPT-4o Audio Preview
+                </option>
               </select>
               <span class="select-arrow">▼</span>
             </div>
@@ -426,16 +430,16 @@
         <h1 class="page-title">API Keys</h1>
         <div class="settings-card">
           <div class="setting-row column">
-            <label for="apiKeyInput">Gemini API Key</label>
+            <label for="apiKeyInput">OpenRouter API Key</label>
             <input
               id="apiKeyInput"
               type="text"
               class="shortcut-input"
-              placeholder="Enter Gemini API Key"
+              placeholder="Enter OpenRouter API Key"
             />
           </div>
           <div class="hint" style="padding: 20px 0">
-            Saving here overrides the GEMINI_API_KEY environment variable.
+            Saving here overrides the OPENROUTER_API_KEY environment variable.
           </div>
         </div>
       </section>

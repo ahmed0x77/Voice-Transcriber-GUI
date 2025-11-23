@@ -1,6 +1,6 @@
 customtkinter
 eel
-google-genai
+openai
 keyboard
 numpy
 pyautogui
