@@ -204,8 +204,9 @@ def calibrate_noise_floor(duration_sec: float = 2.0) -> dict:
 def record_audio(session_id):
     """Records audio from microphone until stop_event is set, filtering out silence.
 
-    Returns (filepath_or_None, aborted_bool)
+    Returns (filepath_or_None, aborted_bool, duration_seconds)
     aborted_bool True means recording became stale/cancelled and should be ignored silently.
+    duration_seconds is the actual recording duration in seconds.
     """
     # Create a temporary file for the recording
     timestamp = time.strftime("%Y%m%d-%H%M%S")
@@ -225,6 +226,7 @@ def record_audio(session_id):
     )
     
     print("Recording started...")
+    start_time = time.time()
     frames = []
     pre_roll = []  # capture a small pre-roll so speech right after start sound isn't lost
     MAX_PRE_ROLL_FRAMES = int(RATE / CHUNK * 0.6)  # ~600ms
@@ -275,10 +277,13 @@ def record_audio(session_id):
     stream.close()
     p.terminate()
     
+    # Calculate recording duration
+    duration_seconds = time.time() - start_time
+    
     # Handle abort
     if aborted:
         # Clean up stream, return without saving
-        return None, True
+        return None, True, duration_seconds
 
     # Get voice percentage to determine if there's actual speech
     total_chunks = silence_count + voice_count
@@ -289,7 +294,7 @@ def record_audio(session_id):
     # If there's not enough voice, return None
     if voice_percentage < MIN_VOICE_PERCENTAGE:
         print("Not enough speech detected. Skipping transcription.")
-        return None, False
+        return None, False, duration_seconds
 
     # Save the recorded audio to the temporary file
     with wave.open(temp_file, 'wb') as wf:
@@ -302,7 +307,7 @@ def record_audio(session_id):
     file_size = os.path.getsize(temp_file)
     print(f"File size: {file_size / (1024 * 1024):.2f} MB")
 
-    return temp_file, False
+    return temp_file, False, duration_seconds
 
 def set_paused(value: bool):
     global paused
@@ -327,7 +332,7 @@ def process_speech(session_id=None):
     from .transcriber import transcribe_with_gemini
     
     # Record audio until stop_event is set
-    audio_file, aborted = record_audio(session_id)
+    audio_file, aborted, duration = record_audio(session_id)
     
     # If aborted early (stale/cancelled) skip everything silently
     if aborted:
@@ -336,6 +341,17 @@ def process_speech(session_id=None):
     # Check if recording was cancelled OR session became stale due to restart after capture finished
     if cancelled or session_id != active_session_id:
         print("Recording was cancelled or stale (post-capture), skipping transcription")
+        return
+    
+    # Check if recording was too short (likely accidental)
+    MIN_RECORDING_DURATION = 0.6  # seconds
+    if duration < MIN_RECORDING_DURATION:
+        print(f"Recording too short ({duration:.2f}s), likely accidental. Skipping transcription.")
+        if audio_file:
+            try:
+                os.remove(audio_file)
+            except Exception:
+                pass
         return
     
     # Skip transcription if no audio file (silent recording)

@@ -30,27 +30,8 @@ settings = {
     "model": "google/gemini-2.5-flash-lite",
     "transcri_brain": {
         "enabled": True,
-        "prompt": """**Objective:** You are a transcript model. Your task is to transcribe the provided audio file into clean, readable text. You must preserve the original language and native script of all spoken words, and intelligently infer correct terms based on context where pronunciation is ambiguous.
-
-**Instructions for Your Transcription:**
-
-1.  **Transcribe Audio:** Convert the audio content (provided directly with this prompt) to text.
-2.  **Remove Disfluencies:** You are to eliminate filler words and self-corrections (e.g., "um," "uh," "like," "you know," "I mean," "sort of").
-3.  **Intelligent Error Correction & Clarification:**
-    *   You should fix obvious minor slips of the tongue or grammatical errors *only if the speaker's intended meaning is unequivocally clear*. Do not alter the original meaning.
-    *   **Contextual Inference for Ambiguous/Technical Terms:** If a specific term (especially a technical term, product name, or proper noun) is slightly mispronounced, slurred, or acoustically unclear, you must leverage the surrounding context to infer and transcribe the most probable correct term.
-        *   **Example:** If the audio sounds like "please fix this socketye-oh connection in that Python script," and "socket IO" is a highly plausible and common term in the context of a "Python script," you should transcribe it as "socket IO."
-        *   This applies when the audio might be ambiguous but the context provides strong clues to the intended word.
-    *   **Constraint:** This inference should only be applied when the contextual evidence is strong and the inferred term significantly improves clarity and accuracy without altering the speaker's core message. You must avoid speculative guessing if context is weak.
-
-4.  **Preserve Original Language & Script (No Translation, No Transliteration to Latin Script):**
-    *   You must transcribe all words *exactly* as spoken in their original language, using their native script.
-    *   If the audio contains mixed languages (e.g., English and Arabic), you are to transcribe words in their respective languages *and scripts* without translation.
-    *   **Crucial Example:** If a speaker says "hello man انت فاكرني", your transcription *must* be "hello man انت فاكرني". It should *NOT* be "hello man enta fakerny" or "hello man you remember me". The Arabic words must remain in Arabic script.
-5.  **Formatting:** You should include line breaks as needed for readability (e.g., for new speakers or logical breaks in thought).
-
-**Input:** Audio file (provided directly with this message/prompt).
-**Output:** Cleaned, contextually-aware text transcript with original languages and scripts preserved."""}
+        "prompt": "Transcribe the audio exactly as spoken in its original language and script.\\nRules:\\n1. Remove filler words (um, uh, like) and stutters.\\n2. Do NOT translate or transliterate (e.g. Arabic stays in Arabic script).\\n3. Fix minor pronunciation errors only if the context is obvious (e.g. 'socket IO' instead of 'socketye-oh').\\n4. Add proper punctuation (commas, periods, question marks).\\n5. Use line breaks only for natural pauses in long sentences."
+    }
 }
 
 _hold_registered_key = None
