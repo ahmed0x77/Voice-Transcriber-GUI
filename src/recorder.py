@@ -9,6 +9,8 @@ import pyperclip
 import pyautogui
 import numpy as np
 import winsound
+import shutil
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Load API key from .env file
@@ -22,6 +24,10 @@ CHUNK = 512  # Smaller chunk for lower latency capture (was 1024)
 TEMP_DIRECTORY = tempfile.gettempdir()
 SELECTED_DEVICE_INDEX = None  # None means use default device
 
+# History settings
+HISTORY_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'history')
+HISTORY_FILE = os.path.join(HISTORY_DIR, 'history.json')
+
 # Silence detection settings
 SILENCE_THRESHOLD = 50  # Amplitude threshold for silence detection (can be updated at runtime)
 MIN_VOICE_PERCENTAGE = 0.05  # Minimum percentage of non-silent chunks to consider as valid speech
@@ -34,6 +40,7 @@ stop_event = threading.Event()
 pause_event = threading.Event()
 app = None  # Legacy reference (tkinter app); kept for backward compatibility
 active_session_id = None  # identifies the most recent recording session
+is_playing_audio = False  # tracks if audio playback is active
 
 # Callback hooks for new (Eel) UI
 on_transcription_done_callback = None
@@ -54,6 +61,7 @@ def set_callbacks(on_transcription_done=None, on_recording_completed=None):
 
 def play_audio(file_path, wait=False):
     """Plays WAV file for audio feedback"""
+    global is_playing_audio
     if not file_path.endswith('.wav'):
         raise Exception('Only .wav files are supported')
     # Resolve relative path robustly (works when launched from different CWD or frozen exe)
@@ -66,10 +74,24 @@ def play_audio(file_path, wait=False):
             audio_dir_candidate = os.path.join(os.path.dirname(__file__), 'audio', os.path.basename(file_path))
             if os.path.exists(audio_dir_candidate):
                 file_path = audio_dir_candidate
+    is_playing_audio = True
     if wait:
         winsound.PlaySound(file_path, winsound.SND_FILENAME)
+        is_playing_audio = False
     else:
         winsound.PlaySound(file_path, winsound.SND_FILENAME | winsound.SND_ASYNC)
+        # For async playback, we'll clear the flag after a reasonable duration
+        # or let stop_audio handle it
+
+def stop_audio():
+    """Stop any currently playing audio"""
+    global is_playing_audio
+    winsound.PlaySound(None, winsound.SND_PURGE)
+    is_playing_audio = False
+
+def is_audio_playing():
+    """Check if audio is currently playing"""
+    return is_playing_audio
 
 def set_silence_threshold(value):
     """Update the global silence threshold used by is_silence().
@@ -234,6 +256,7 @@ def record_audio(session_id):
     voice_count = 0
     consecutive_silence = 0
     recording_voice = False
+    TRAILING_SILENCE_CHUNKS = 12  # Keep ~0.75 seconds of trailing silence for natural transitions
     
     # Record audio in chunks until stop_event is set
     aborted = False
@@ -259,17 +282,22 @@ def record_audio(session_id):
             silence_count += 1
             consecutive_silence += 1
 
-            # Only append some silence chunks to maintain natural sound
-            if recording_voice and consecutive_silence <= 8:  # Keep ~0.5 second of trailing silence
+            # Keep trailing silence for smooth transitions (avoid harsh cuts)
+            if recording_voice and consecutive_silence <= TRAILING_SILENCE_CHUNKS:
                 frames.append(data)
+            elif recording_voice and consecutive_silence > TRAILING_SILENCE_CHUNKS:
+                # We've had enough silence, stop recording voice but keep the buffer
+                recording_voice = False
         else:
             voice_count += 1
             consecutive_silence = 0
-            recording_voice = True
-            # On first detected voice append pre-roll to avoid clipping beginning
+            
+            # If we weren't recording, append the pre-roll buffer for smooth attack
             if not recording_voice and pre_roll:
                 frames.extend(pre_roll)
                 pre_roll.clear()
+            
+            recording_voice = True
             frames.append(data)
     
     # Stop and close the stream
@@ -319,6 +347,149 @@ def set_paused(value: bool):
 
 def get_recording_state() -> bool:
     return globals().get("recording", False)
+
+# --- History Management Functions ---
+
+def ensure_history_dir():
+    """Ensure the history directory and JSON file exist."""
+    if not os.path.exists(HISTORY_DIR):
+        os.makedirs(HISTORY_DIR)
+    if not os.path.exists(HISTORY_FILE):
+        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump([], f)
+
+def get_history():
+    """Get the list of all recordings from history.
+    
+    Returns:
+        list of dicts with keys: filename, timestamp, transcript
+    """
+    ensure_history_dir()
+    try:
+        with open(HISTORY_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        return []
+
+def save_recording_to_history(audio_path, transcript):
+    """Move the recorded audio file to history and save its transcript.
+    
+    Args:
+        audio_path: path to the temporary audio file
+        transcript: transcribed text (can be None or empty)
+    """
+    ensure_history_dir()
+    if not audio_path or not os.path.exists(audio_path):
+        return
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    filename = f"recording_{timestamp}.wav"
+    dest_path = os.path.join(HISTORY_DIR, filename)
+    
+    try:
+        shutil.move(audio_path, dest_path)
+        print(f"Saved recording to history: {dest_path}")
+    except Exception as e:
+        print(f"Error moving file to history: {e}")
+        return
+
+    entry = {
+        "filename": filename,
+        "timestamp": datetime.now().isoformat(),
+        "transcript": transcript or ""
+    }
+
+    history = get_history()
+    history.insert(0, entry)  # Add to beginning (newest first)
+
+    try:
+        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error saving history json: {e}")
+
+def delete_history_item(filename):
+    """Delete a recording from history (both file and JSON entry).
+    
+    Args:
+        filename: name of the audio file to delete
+    
+    Returns:
+        Updated history list
+    """
+    ensure_history_dir()
+    file_path = os.path.join(HISTORY_DIR, filename)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            print(f"Deleted history file: {file_path}")
+        except Exception as e:
+            print(f"Error deleting file: {e}")
+    
+    history = get_history()
+    history = [item for item in history if item['filename'] != filename]
+    
+    try:
+        with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+            json.dump(history, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"Error updating history json: {e}")
+    
+    return history
+
+def play_history_item(filename):
+    """Play a recording from history.
+    
+    Args:
+        filename: name of the audio file to play
+    
+    Returns:
+        True if playback started, False otherwise
+    """
+    global is_playing_audio
+    file_path = os.path.join(HISTORY_DIR, filename)
+    if os.path.exists(file_path):
+        is_playing_audio = True
+        play_audio(file_path)
+        return True
+    else:
+        print(f"File not found: {file_path}")
+        return False
+
+def transcribe_history_item(filename):
+    """Transcribe a recording from history and update the JSON.
+    
+    Args:
+        filename: name of the audio file to transcribe
+    
+    Returns:
+        Updated history list, or None if transcription failed
+    """
+    ensure_history_dir()
+    file_path = os.path.join(HISTORY_DIR, filename)
+    if not os.path.exists(file_path):
+        print(f"File not found for transcription: {file_path}")
+        return None
+    
+    from .transcriber import transcribe_with_gemini
+    transcript = transcribe_with_gemini(file_path)
+    
+    if transcript:
+        history = get_history()
+        for item in history:
+            if item['filename'] == filename:
+                item['transcript'] = transcript
+                break
+        
+        try:
+            with open(HISTORY_FILE, 'w', encoding='utf-8') as f:
+                json.dump(history, f, ensure_ascii=False, indent=2)
+            print(f"Updated transcript for {filename}")
+        except Exception as e:
+            print(f"Error updating history json: {e}")
+        
+        return history
+    return None
 
 def process_speech(session_id=None):
     """Records audio, transcribes it, and pastes the result.
@@ -400,14 +571,16 @@ def process_speech(session_id=None):
             except Exception:
                 pass
 
-        # Delete the temporary audio file
-        try:
-            os.remove(audio_file)
-            print(f"Deleted temporary file: {audio_file}")
-        except Exception as e:
-            print(f"Error deleting temporary file: {e}")
+        # Save to history instead of deleting
+        save_recording_to_history(audio_file, transcribed_text)
     else:
         print("No transcription result")
+        # Optionally save recordings without transcripts, or delete them
+        if audio_file and os.path.exists(audio_file):
+            try:
+                os.remove(audio_file)
+            except Exception:
+                pass
 
     # Ensure UI state resets after processing
     # Notify completion

@@ -287,6 +287,60 @@ def get_audio_devices():
     except Exception as e:
         return {"ok": False, "error": str(e)}
 
+# ---------------- Eel Exposed History APIs -----------------
+@eel.expose
+def get_history():
+    """Get the list of all recordings from history."""
+    try:
+        return recorder.get_history()
+    except Exception as e:
+        print(f"Error getting history: {e}")
+        return []
+
+@eel.expose
+def delete_history_item(filename):
+    """Delete a recording from history."""
+    try:
+        return recorder.delete_history_item(filename)
+    except Exception as e:
+        print(f"Error deleting history item: {e}")
+        return []
+
+@eel.expose
+def play_history_item(filename):
+    """Play a recording from history."""
+    try:
+        return recorder.play_history_item(filename)
+    except Exception as e:
+        print(f"Error playing history item: {e}")
+        return False
+
+@eel.expose
+def stop_audio():
+    """Stop any currently playing audio."""
+    try:
+        recorder.stop_audio()
+    except Exception as e:
+        print(f"Error stopping audio: {e}")
+
+@eel.expose
+def is_audio_playing():
+    """Check if audio is currently playing."""
+    try:
+        return recorder.is_audio_playing()
+    except Exception as e:
+        print(f"Error checking audio state: {e}")
+        return False
+
+@eel.expose
+def transcribe_history_item(filename):
+    """Transcribe a recording from history and update the JSON."""
+    try:
+        return recorder.transcribe_history_item(filename)
+    except Exception as e:
+        print(f"Error transcribing history item: {e}")
+        return None
+
 def main():
     # Always load persisted settings first
     load_settings()

@@ -305,6 +305,70 @@
       .hidden {
         display: none !important;
       }
+      .history-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .history-item {
+        background: var(--bg-card);
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        color: var(--text-secondary);
+        font-size: 12px;
+      }
+      .history-transcript {
+        color: var(--text-primary);
+        font-size: 14px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+        max-height: 120px;
+        overflow-y: auto;
+      }
+      .history-transcript em {
+        color: var(--text-secondary);
+        font-style: italic;
+      }
+      .history-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+      .history-actions button {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        color: var(--text-primary);
+        padding: 6px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.15s ease;
+      }
+      .history-actions button:hover {
+        background: var(--bg-nav-active);
+        border-color: #555;
+      }
+      .history-actions button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      .history-actions button.delete-btn {
+        color: #ff6b6b;
+        border-color: #ff6b6b;
+      }
+      .history-actions button.delete-btn:hover {
+        background: #ff6b6b;
+        color: white;
+      }
     </style>
   </head>
   <body>
@@ -314,6 +378,7 @@
           <button class="active" data-view="general">General</button>
         </li>
         <li><button data-view="api-keys">API Keys</button></li>
+        <li><button data-view="history">History</button></li>
       </ul>
     </aside>
     <main>
@@ -441,6 +506,13 @@
           <div class="hint" style="padding: 20px 0">
             Saving here overrides the OPENROUTER_API_KEY environment variable.
           </div>
+        </div>
+      </section>
+
+      <section id="view-history" class="pane hidden">
+        <h1 class="page-title">History</h1>
+        <div id="history-list" class="history-list">
+          <!-- History items will be injected here -->
         </div>
       </section>
     </main>
