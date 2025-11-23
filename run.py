@@ -354,16 +354,11 @@ def main():
         recorder.set_audio_device(settings.get('audio_device_index'))
     except Exception:
         pass
-    if not os.environ.get("GEMINI_API_KEY"):
-        print("WARNING: GEMINI_API_KEY not set in environment variables or .env file")
-        # Load user settings (including optional API key)
-        load_settings()
-        # Apply stored API key if provided, else fall back to environment
-        api_key = settings.get("gemini_api_key") or os.environ.get("GEMINI_API_KEY")
-        if api_key:
-            os.environ["GEMINI_API_KEY"] = api_key
-        else:
-            print("WARNING: GEMINI_API_KEY not set; please enter it in API Keys view")
+    
+    # Check if API key is configured
+    if not settings.get("openrouter_api_key"):
+        print("WARNING: OpenRouter API key not set; please enter it in API Keys view")
+    
     eel.init(WEB_DIR)
     init_overlay(
         pause_toggle_cb=lambda: toggle_pause(),
